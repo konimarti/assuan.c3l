@@ -9,9 +9,25 @@ fault AssuanError
 	UNKNOWN_SERVER_ANSWER,
 }
 
-// @TODO: to be implemented
-fn String escape(String s) => s;
+// tescape allocates the escaped string with the temp allocator.
+fn String tescape(String s)
+{
+	DString tmp = dstring::temp_new(s);
+	tmp.replace("\r", "%0D");
+	tmp.replace("\n", "%0A");
+	tmp.replace("\\", "%5C");
+	tmp.replace("%", "%25");
+	return tmp.str_view();
+}
 
-// @TODO: to be implemented
-fn String unescape(String s) => s;
+// tunescape allocates the unescaped string with the temp allocator.
+fn String tunescape(String s)
+{
+	DString tmp = dstring::temp_new(s);
+	tmp.replace("%0D", "\r");
+	tmp.replace("%0A", "\n");
+	tmp.replace("%5C", "\\");
+	tmp.replace("%25", "%");
+	return tmp.str_view();
+}
 

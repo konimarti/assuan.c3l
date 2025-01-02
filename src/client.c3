@@ -38,7 +38,7 @@ fn void! AssuanClient.run(&self, String cmd, String params = "", DString *out = 
 		DString line;
 		line.temp_init();
 		line.appendf("%s", cmd);
-		if (params.len) line.appendf(" %s", escape(params));
+		if (params.len) line.appendf(" %s", tescape(params));
 		line.append("\n");
 		if (line.len() > 1000) return AssuanError.LINE_TOO_LONG?;
 
