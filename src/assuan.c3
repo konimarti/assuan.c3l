@@ -13,10 +13,10 @@ fault AssuanError
 fn String tescape(String s)
 {
 	DString tmp = dstring::temp_new(s);
+	tmp.replace("%", "%25"); // should be first
 	tmp.replace("\r", "%0D");
 	tmp.replace("\n", "%0A");
 	tmp.replace("\\", "%5C");
-	tmp.replace("%", "%25");
 	return tmp.str_view();
 }
 
@@ -27,7 +27,7 @@ fn String tunescape(String s)
 	tmp.replace("%0D", "\r");
 	tmp.replace("%0A", "\n");
 	tmp.replace("%5C", "\\");
-	tmp.replace("%25", "%");
+	tmp.replace("%25", "%"); // should be last
 	return tmp.str_view();
 }
 
