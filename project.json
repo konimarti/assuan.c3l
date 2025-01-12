@@ -7,6 +7,10 @@
 		"test": {
 			"type": "executable",
 			"sources": [ "test/**" ]
+		},
+		"repl": {
+			"type": "executable",
+			"sources": [ "src/repl/*" ]
 		}
 	}
 }
