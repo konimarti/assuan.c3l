@@ -3,7 +3,7 @@ module assuan_test;
 import assuan;
 import std::collections::tuple;
 
-fn void! test_escape() @test
+fn void test_encoding() @test
 {
 	Tuple(<String, String>)[*] tests = {
 		{"hello world", "hello world"},
@@ -20,13 +20,13 @@ fn void! test_escape() @test
 	{
 		foreach (i, t: tests)
 		{
-			got = assuan::tescape(t.first);
+			got = assuan::temp_encode(t.first);
 			assert(got == t.second,
-				"[tescape %d/%d]   got: %s, want: %s", i, tests.len, got, t.second);
+				"[encode %d/%d]   got: %s, want: %s", i, tests.len, got, t.second);
 
-			got = assuan::tunescape(t.second);
+			got = assuan::temp_decode(t.second);
 			assert(got == t.first,
-				"[tunescape %d/%d] got: %s, want: %s", i, tests.len, got, t.first);
+				"[decode %d/%d] got: %s, want: %s", i, tests.len, got, t.first);
 		}
 	};
 }

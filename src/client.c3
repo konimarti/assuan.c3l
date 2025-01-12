@@ -4,17 +4,15 @@ import std::io;
 
 struct AssuanClient
 {
-	InStream r;
-	OutStream w;
+	inline AssuanPipe pipe;
 }
 
 <*
-@param [&inout] r "InStream to read from Assuan server"
-@param [&inout] w "OutStream to Write to Assuan server"
+@param  pipe "Assuan communication pipe"
 *>
-fn AssuanClient*! AssuanClient.init(&self, InStream r, OutStream w)
+fn AssuanClient*! AssuanClient.init(&self, AssuanPipe pipe)
 {
-	*self = { .r = r, .w = w };
+	self.pipe = pipe;
 
 	// start by reading server's OK
 	@pool()
@@ -38,7 +36,7 @@ fn void! AssuanClient.run(&self, String cmd, String params = "", DString *out = 
 		DString line;
 		line.temp_init();
 		line.appendf("%s", cmd);
-		if (params.len) line.appendf(" %s", tescape(params));
+		if (params.len) line.appendf(" %s", temp_encode(params));
 		line.append("\n");
 		if (line.len() > 1000) return AssuanError.LINE_TOO_LONG?;
 
