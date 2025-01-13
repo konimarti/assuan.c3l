@@ -11,10 +11,9 @@ fn void main()
 	pipe.init(io::stdin(),io::stdout());
 
 	AssuanServer server;
-	server.init(&pipe, "Pleased to meet you, REPL!", allocator::heap())!!;
-	defer server.free();
+	server.init(&pipe);
 
-	if (catch err = server.serve({},{}))
+	if (catch err = server.serve(debug: true))
 	{
 		io::printfn("server thread stopped: %s", err);
 	}

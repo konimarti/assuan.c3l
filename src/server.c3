@@ -1,57 +1,30 @@
 module assuan;
 
 import std::io;
-import std::collections::tuple;
-import std::collections::list;
-
-def CommandFn = fn void!(AssuanServer *s, String params);
-
-struct AssuanHelp
-{
-	String cmd;
-	String[] message;
-}
-
-struct AssuanHandler
-{
-	String cmd;
-	CommandFn handle;
-}
+import assuan::proto;
 
 struct AssuanServer
 {
 	AssuanPipe *pipe;
-	String greeting;
-	Allocator allocator;
 }
 
 <*
 @param [&inout] pipe "Assuan communication pipe" 
-@param [&inout] allocator
 *>
-fn AssuanServer! AssuanServer.init(&self, AssuanPipe *pipe, String greeting, Allocator allocator)
+fn AssuanServer* AssuanServer.init(&self, AssuanPipe *pipe)
 {
-	String s = greeting.len ? greeting : "Pleased to meet your";
-
-	*self = {
-		.pipe = pipe,
-		.greeting = s.copy(allocator),
-		.allocator = allocator,
-	};
-	return *self;
+	*self = { .pipe = pipe };
+	return self;
 }
 
-fn void AssuanServer.free(&self)
-{
-	if (!self.allocator) return;
-	self.greeting.free();
-}
-
-fn void! AssuanServer.serve(&self, AssuanHandler[] handlers, AssuanHelp[] help = {})
+<*
+@param state "Assuan protocol implementation" 
+*>
+fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto(), bool debug = false)
 {
 	char[MAX_LINE_LENGTH + 2] line;
 
-	self.pipe.writeline("OK", self.greeting)!;
+	self.pipe.writeline("OK", state.greeting())!;
 
 	@pool()
 	{
@@ -65,7 +38,7 @@ fn void! AssuanServer.serve(&self, AssuanHandler[] handlers, AssuanHelp[] help =
 				case 1: cmd = resp[0]; params = "";
 				default: return AssuanError.IO_ERROR?;
 			}
-			io::eprintfn("[serve (%s)] cmd=%s params=%s", resp, cmd, params);
+			if (debug) io::eprintfn("[serve (%s)] cmd=%s params=%s", resp, cmd, params);
 			cmd.convert_ascii_to_upper();
 			switch (cmd)
 			{
@@ -78,16 +51,17 @@ fn void! AssuanServer.serve(&self, AssuanHandler[] handlers, AssuanHelp[] help =
 				case "OPTION":  
 					unreachable("not implemented yet");
 				case "HELP":  
-					self.helpCmd(params, help)!;
+					self.helpCmd(params, state.help())!;
 				case "RESET":  
 					unreachable("not implemented yet");
 					// nextcase;
 				default:
 					CommandFn handle;
-					foreach (h: handlers)
+					foreach (h: state.handlers())
 					{
 						if (h.cmd != cmd) continue;
 						handle = h.handle;
+						break;
 					}
 
 					if (!handle) {
