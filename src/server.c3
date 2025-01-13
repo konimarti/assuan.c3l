@@ -1,5 +1,6 @@
 module assuan;
 
+import std::io;
 import std::collections::tuple;
 import std::collections::list;
 
@@ -48,6 +49,8 @@ fn void AssuanServer.free(&self)
 
 fn void! AssuanServer.serve(&self, AssuanHandler[] handlers, AssuanHelp[] help = {})
 {
+	char[MAX_LINE_LENGTH + 2] line;
+
 	self.pipe.writeline("OK", self.greeting)!;
 
 	@pool()
@@ -55,15 +58,18 @@ fn void! AssuanServer.serve(&self, AssuanHandler[] handlers, AssuanHelp[] help =
 		String cmd, params;
 		while SERVE_LOOP: (true)
 		{
-			String[] resp = self.pipe.readline(allocator::temp())!;
+			String[] resp = self.pipe.readline(allocator::temp())!.tsplit(" ", 2);
 			switch (resp.len)
 			{
 				case 2: cmd = resp[0]; params = resp[1];
 				case 1: cmd = resp[0]; params = "";
 				default: return AssuanError.IO_ERROR?;
 			}
+			io::eprintfn("[serve (%s)] cmd=%s params=%s", resp, cmd, params);
+			cmd.convert_ascii_to_upper();
 			switch (cmd)
 			{
+				case "": continue; // just ignore empty input
 				case "BYE":  
 					(void)self.pipe.writeline("OK");
 					break SERVE_LOOP;
@@ -85,8 +91,8 @@ fn void! AssuanServer.serve(&self, AssuanHandler[] handlers, AssuanHelp[] help =
 					}
 
 					if (!handle) {
-						String err = string::tformat("unknown command: %s", cmd);
-						self.pipe.write_error(cmd)!;
+						String err = string::tformat("unknown command: '%s'", cmd);
+						self.pipe.write_error(err)!;
 					}
 					else
 					{
@@ -115,7 +121,7 @@ fn void! AssuanServer.helpCmd(&self, String params, AssuanHelp[] help) @private
 		}
 		@pool()
 		{
-			String err = string::tformat("help requested for unknown command: %s", params);
+			String err = string::tformat("no help message found for command: %s", params);
 			self.pipe.write_error(err)!;
 		};
 	}

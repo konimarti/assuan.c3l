@@ -30,15 +30,7 @@ fn AssuanPipe AssuanPipe.init(&self, InStream r, OutStream w)
 	return *self;
 }
 
-fn String[]! AssuanPipe.readline(&self, Allocator allocator)
-{
-	@pool(allocator)
-	{
-		String r = io::treadline(self.r)!;
-		if (!r.len) return AssuanError.IO_ERROR?;
-		return r.split(" ", 2, allocator);
-	};
-}
+fn String! AssuanPipe.readline(&self, Allocator allocator) => io::readline(self.r, allocator)!;
 
 fn usz! AssuanPipe.writeline(&self, String cmd, String params = "")
 {
@@ -81,6 +73,8 @@ fn usz! AssuanPipe.write_data(&self, char[] data)
 
 fn String! AssuanPipe.read_data(&self, Allocator allocator)
 {
+	char[MAX_LINE_LENGTH + 2] line;
+
 	@pool(allocator)
 	{
 		DString data;
@@ -88,7 +82,7 @@ fn String! AssuanPipe.read_data(&self, Allocator allocator)
 
 		while READ_LOOP: (true)
 		{
-			String[] resp = self.readline(allocator::temp())!;
+			String[] resp = self.readline(allocator::temp())!.tsplit(" ", 2);
 			if (!resp.len) return AssuanError.IO_ERROR?;
 			switch (resp[0])
 			{
