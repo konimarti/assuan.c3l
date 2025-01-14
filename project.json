@@ -2,7 +2,7 @@
 	"authors": [ "Koni Marti <koni.marti@gmail.com>" ],
 	"version": "0.1.0",
 	"output": "build",
-	"sources": [ "src/**" ],
+	"sources": [ "src/*" ],
 	"targets": {
 		"test": {
 			"type": "executable",
@@ -11,6 +11,10 @@
 		"repl": {
 			"type": "executable",
 			"sources": [ "src/repl/*" ]
+		},
+		"pinentry-c3": {
+			"type": "executable",
+			"sources": [ "src/pinentry-c3/*" ]
 		}
 	}
 }
