@@ -22,7 +22,6 @@ interface AssuanProtocol
 }
 
 distinct AssuanDefaultProto (AssuanProtocol) = String;
-
 fn String AssuanDefaultProto.greeting(&self) @dynamic => (String)*self;
 fn AssuanHelp[] AssuanDefaultProto.help(&self) @dynamic => {};
 fn AssuanHandler[] AssuanDefaultProto.handlers(&self) @dynamic => {};

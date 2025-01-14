@@ -49,7 +49,20 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 				case "NOP":  
 					(void)self.pipe.writeline("OK");
 				case "OPTION":  
-					unreachable("not implemented yet");
+					if (try n = params.index_of("="))
+					{
+						String key = ((String)params[:n]).trim();
+						String value = ((String)params[n+1..]).trim();
+						if (catch err = state.set_option(key, value))
+						{
+							String err_str = string::tformat("failed to set option: %s", err);
+							self.pipe.write_error(err_str)!;
+						}
+					}
+					else
+					{
+						self.pipe.write_error("invalid option: no '=' found")!;
+					}
 				case "HELP":  
 					self.helpCmd(params, state.help())!;
 				case "RESET":  
@@ -70,9 +83,15 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 					}
 					else
 					{
-						// TODO: more fine-grained error handling.
-						handle(self, params)!;
-						self.pipe.writeline("OK")!;
+						if (catch err = handle(self, params))
+						{
+							String err_str = string::tformat("error on command %s: %s", cmd, err);
+							self.pipe.write_error(err_str)!;
+						}
+						else
+						{
+							self.pipe.writeline("OK")!;
+						}
 					}
 			}
 		}
