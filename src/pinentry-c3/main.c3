@@ -2,6 +2,8 @@ module pinentryc3;
 
 import std::io;
 import std::collections::map;
+import libc;
+
 import assuan;
 
 def Options = HashMap(<String, String>);
@@ -39,7 +41,7 @@ fn void main()
 		.callbacks = {
 			{
 				"RESET",
-				fn void!(AssuanProtocol state, String params)
+				fn void!(AssuanIO *io, AssuanProtocol state, String params)
 				{
 					Pinentry *p = (Pinentry*)state;
 					p.options.clear();
@@ -47,11 +49,41 @@ fn void main()
 			},
 			{
 				"BOOM",
-				fn void!(AssuanProtocol state, String params)
+				fn void!(AssuanIO *io, AssuanProtocol state, String params)
 				{
 					Pinentry *p = (Pinentry*)state;
 					uint repeat = p.options["REPEAT"]!.to_uint()!;
 					for (usz i = 0; i < repeat; i++) io::printn("BOOM!");
+				}
+			},
+			{
+				"GETPIN",
+				fn void!(AssuanIO *io, AssuanProtocol state, String params)
+				{
+					Pinentry *p = (Pinentry*)state;
+					String ttyname = p.options["TTYNAME"]!;
+
+					File fo = file::open(ttyname, "w")!;
+					defer (void)fo.close();
+
+					File fi = file::open(ttyname, "r")!;
+					defer (void)fi.close();
+					CInt ttyfi = libc::fileno(fi.file);
+
+					io::fprintf(&fo, "Enter Pin1: ")!;
+					fo.flush()!!;
+
+					Termios save;
+					save.getAttr(ttyfi);
+					defer save.setAttr(ttyfi, termios::TCSANOW);
+
+					Termios use = save;
+					use.c_lflag &= ~(termios::ECHO | termios::ECHOE | termios::ECHOK | termios::ECHONL);
+					use.setAttr(ttyfi, termios::TCSAFLUSH);
+
+					String passphrase = io::readline(&fi)!;
+
+					io.write_data(passphrase)!;
 				}
 			},
 		},

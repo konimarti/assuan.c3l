@@ -82,7 +82,7 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 					}
 					else
 					{
-						if (catch err = handle(state, params))
+						if (catch err = handle(self.io, state, params))
 						{
 							String err_str = string::tformat("error on command %s: %s", cmd, err);
 							self.io.write_error(err_str)!;

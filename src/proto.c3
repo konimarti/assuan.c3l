@@ -1,6 +1,6 @@
 module assuan::proto;
 
-def CallbackFn = fn void!(AssuanProtocol state, String params);
+def CallbackFn = fn void!(AssuanIO *io, AssuanProtocol state, String params);
 
 struct AssuanHelp
 {
