@@ -1,6 +1,8 @@
 module assuan;
 
 import std::io;
+import std::collections::list;
+import std::sort;
 import assuan::proto;
 
 struct AssuanServer
@@ -64,12 +66,9 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 						self.pipe.write_error("invalid option: no '=' found")!;
 					}
 				case "HELP":  
-					self.helpCmd(params, state.help())!;
-				case "RESET":  
-					unreachable("not implemented yet");
-					// nextcase;
+					self.helpCmd(state, params)!;
 				default:
-					CommandFn handle;
+					CallbackFn handle;
 					foreach (h: state.handlers())
 					{
 						if (h.cmd != cmd) continue;
@@ -83,7 +82,7 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 					}
 					else
 					{
-						if (catch err = handle(self, params))
+						if (catch err = handle(state, params))
 						{
 							String err_str = string::tformat("error on command %s: %s", cmd, err);
 							self.pipe.write_error(err_str)!;
@@ -98,11 +97,20 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 	};
 }
 
-fn void! AssuanServer.helpCmd(&self, String params, AssuanHelp[] help) @private
+fn int String.compare_to(self, String other)
+{
+        usz i, n;
+        n = $$min(self.len, other.len);
+        while (i < n && (self[i] - other[i]) == 0) i++;
+        if (i == n) return self.len - other.len;
+        return self[i] - other[i];
+}
+
+fn void! AssuanServer.helpCmd(&self, AssuanProtocol state, String params) @private
 {
 	if (params.len)
 	{
-		foreach (h: help)
+		foreach (h: state.help())
 		{
 			if (!params.contains(h.cmd)) continue;
 			foreach (text: h.message)
@@ -120,9 +128,21 @@ fn void! AssuanServer.helpCmd(&self, String params, AssuanHelp[] help) @private
 	}
 	else
 	{
-		String[*] help_list = { "NOP", "OPTION", "CANCEL", "BYE", "RESET", "END", "HELP" };
-		foreach (h: help_list) self.pipe.write_comment(h)!;
-		foreach (h: help) self.pipe.write_comment(h.cmd)!;
-		self.pipe.writeline("OK")!;
+		String[*] help_list = { "NOP", "OPTION", "CANCEL", "BYE", "END", "HELP" };
+
+		@pool()
+		{
+			List(<String>) dict;
+			dict.temp_init_with_array(help_list[..]);
+			foreach (h: state.handlers())
+			{
+				if (!dict.contains(h.cmd)) dict.push(h.cmd);
+			}
+			sort::quicksort(dict);
+			foreach (help_str: dict.array_view())
+			{
+				self.pipe.write_comment(help_str)!;
+			}
+		};
 	}
 }

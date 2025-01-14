@@ -1,6 +1,6 @@
 module assuan::proto;
 
-def CommandFn = fn void!(AssuanServer *s, String params);
+def CallbackFn = fn void!(AssuanProtocol state, String params);
 
 struct AssuanHelp
 {
@@ -11,7 +11,7 @@ struct AssuanHelp
 struct AssuanHandler
 {
 	String cmd;
-	CommandFn handle;
+	CallbackFn handle;
 }
 interface AssuanProtocol
 {
