@@ -20,7 +20,7 @@ fn void! Pinentry.set_option(&self, String key, String value) @dynamic => (void)
 
 fn void main()
 {
-	AssuanPipe pipe;
+	AssuanIO pipe;
 	pipe.init(io::stdin(),io::stdout());
 
 	AssuanServer server;

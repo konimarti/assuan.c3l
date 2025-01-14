@@ -4,13 +4,13 @@ import std::io;
 
 struct AssuanClient
 {
-	inline AssuanPipe pipe;
+	inline AssuanIO pipe;
 }
 
 <*
 @param  pipe "Assuan communication pipe"
 *>
-fn AssuanClient*! AssuanClient.init(&self, AssuanPipe pipe)
+fn AssuanClient*! AssuanClient.init(&self, AssuanIO pipe)
 {
 	self.pipe = pipe;
 

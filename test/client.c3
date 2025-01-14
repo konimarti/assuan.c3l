@@ -14,11 +14,11 @@ fn void test_client_run() @test
 	io::fprint(&buf, "OK\n")!!;
 
 	char[32] write;
-	AssuanPipe pipe;
-	pipe.init(&buf, ByteWriter{}.init_with_buffer(write[..]));
+	AssuanIO io;
+	io.init(&buf, ByteWriter{}.init_with_buffer(write[..]));
 
 	AssuanClient c;
-	c.init(pipe)!!;
+	c.init(io)!!;
 
 	@pool()
 	{
@@ -28,7 +28,3 @@ fn void test_client_run() @test
 		assert(out.str_view() == "ABCDE", "got: %s, want: %s", out.str_view(), "ABCDE");
 	};
 }
-
-
-
-

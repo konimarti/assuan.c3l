@@ -14,7 +14,7 @@ fault AssuanError
 
 const int MAX_LINE_LENGTH = 1000;
 
-struct AssuanPipe
+struct AssuanIO
 {
 	InStream r;
 	OutStream w;
@@ -22,17 +22,17 @@ struct AssuanPipe
 
 <*
 @param [&inout] r "InStream to read from Assuan server"
-@param [&inout] w "OutStream to Write to Assuan server"
+@param [&inout] w "OutStream to write to Assuan server"
 *>
-fn AssuanPipe AssuanPipe.init(&self, InStream r, OutStream w)
+fn AssuanIO AssuanIO.init(&self, InStream r, OutStream w)
 {
 	*self = { .r = r, .w = w };
 	return *self;
 }
 
-fn String! AssuanPipe.readline(&self, Allocator allocator) => io::readline(self.r, allocator)!;
+fn String! AssuanIO.readline(&self, Allocator allocator) => io::readline(self.r, allocator)!;
 
-fn usz! AssuanPipe.writeline(&self, String cmd, String params = "")
+fn usz! AssuanIO.writeline(&self, String cmd, String params = "")
 {
 	@pool()
 	{
@@ -55,7 +55,7 @@ fn usz! AssuanPipe.writeline(&self, String cmd, String params = "")
 
 }
 
-fn usz! AssuanPipe.write_data(&self, char[] data)
+fn usz! AssuanIO.write_data(&self, char[] data)
 {		
 	usz n;
 	@pool()
@@ -71,7 +71,7 @@ fn usz! AssuanPipe.write_data(&self, char[] data)
 	return n;
 }
 
-fn String! AssuanPipe.read_data(&self, Allocator allocator)
+fn String! AssuanIO.read_data(&self, Allocator allocator)
 {
 	char[MAX_LINE_LENGTH + 2] line;
 
@@ -103,8 +103,8 @@ fn String! AssuanPipe.read_data(&self, Allocator allocator)
 	};
 }
 
-fn usz! AssuanPipe.write_comment(&self, String text) @inline => self.writeline("#", text);
-fn usz! AssuanPipe.write_error(&self, String err) @inline => self.writeline("ERR", err);
+fn usz! AssuanIO.write_comment(&self, String text) @inline => self.writeline("#", text);
+fn usz! AssuanIO.write_error(&self, String err) @inline => self.writeline("ERR", err);
 
 // temp_encode allocates the escaped string with the temp allocator.
 fn String temp_encode(String s)

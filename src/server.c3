@@ -7,15 +7,15 @@ import assuan::proto;
 
 struct AssuanServer
 {
-	AssuanPipe *pipe;
+	AssuanIO *io;
 }
 
 <*
-@param [&inout] pipe "Assuan communication pipe" 
+@param [&inout] io "Assuan communication io" 
 *>
-fn AssuanServer* AssuanServer.init(&self, AssuanPipe *pipe)
+fn AssuanServer* AssuanServer.init(&self, AssuanIO *io)
 {
-	*self = { .pipe = pipe };
+	*self = { .io = io };
 	return self;
 }
 
@@ -26,14 +26,14 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 {
 	char[MAX_LINE_LENGTH + 2] line;
 
-	self.pipe.writeline("OK", state.greeting())!;
+	self.io.writeline("OK", state.greeting())!;
 
 	@pool()
 	{
 		String cmd, params;
 		while SERVE_LOOP: (true)
 		{
-			String[] resp = self.pipe.readline(allocator::temp())!.tsplit(" ", 2);
+			String[] resp = self.io.readline(allocator::temp())!.tsplit(" ", 2);
 			switch (resp.len)
 			{
 				case 2: cmd = resp[0]; params = resp[1];
@@ -46,10 +46,10 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 			{
 				case "": continue; // just ignore empty input
 				case "BYE":  
-					(void)self.pipe.writeline("OK");
+					(void)self.io.writeline("OK");
 					break SERVE_LOOP;
 				case "NOP":  
-					(void)self.pipe.writeline("OK");
+					(void)self.io.writeline("OK");
 				case "OPTION":  
 					if (try n = params.index_of("="))
 					{
@@ -58,12 +58,12 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 						if (catch err = state.set_option(key, value))
 						{
 							String err_str = string::tformat("failed to set option: %s", err);
-							self.pipe.write_error(err_str)!;
+							self.io.write_error(err_str)!;
 						}
 					}
 					else
 					{
-						self.pipe.write_error("invalid option: no '=' found")!;
+						self.io.write_error("invalid option: no '=' found")!;
 					}
 				case "HELP":  
 					self.helpCmd(state, params)!;
@@ -78,18 +78,18 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 
 					if (!handle) {
 						String err = string::tformat("unknown command: '%s'", cmd);
-						self.pipe.write_error(err)!;
+						self.io.write_error(err)!;
 					}
 					else
 					{
 						if (catch err = handle(state, params))
 						{
 							String err_str = string::tformat("error on command %s: %s", cmd, err);
-							self.pipe.write_error(err_str)!;
+							self.io.write_error(err_str)!;
 						}
 						else
 						{
-							self.pipe.writeline("OK")!;
+							self.io.writeline("OK")!;
 						}
 					}
 			}
@@ -115,15 +115,15 @@ fn void! AssuanServer.helpCmd(&self, AssuanProtocol state, String params) @priva
 			if (!params.contains(h.cmd)) continue;
 			foreach (text: h.message)
 			{
-				self.pipe.write_comment(text)!;
+				self.io.write_comment(text)!;
 			}
-			self.pipe.writeline("OK")!;
+			self.io.writeline("OK")!;
 			return;
 		}
 		@pool()
 		{
 			String err = string::tformat("no help message found for command: %s", params);
-			self.pipe.write_error(err)!;
+			self.io.write_error(err)!;
 		};
 	}
 	else
@@ -141,7 +141,7 @@ fn void! AssuanServer.helpCmd(&self, AssuanProtocol state, String params) @priva
 			sort::quicksort(dict);
 			foreach (help_str: dict.array_view())
 			{
-				self.pipe.write_comment(help_str)!;
+				self.io.write_comment(help_str)!;
 			}
 		};
 	}
