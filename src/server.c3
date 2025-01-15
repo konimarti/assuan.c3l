@@ -46,24 +46,28 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 			{
 				case "": continue; // just ignore empty input
 				case "BYE":  
-					(void)self.io.writeline("OK");
+					(void)self.io.writeline("OK", "closing connection");
 					break SERVE_LOOP;
 				case "NOP":  
 					(void)self.io.writeline("OK");
 				case "OPTION":  
+					String key = params;
+					String value;
 					if (try n = params.index_of("="))
 					{
-						String key = ((String)params[:n]).trim();
-						String value = ((String)params[n+1..]).trim();
-						if (catch err = state.set_option(key, value))
-						{
-							String err_str = string::tformat("failed to set option: %s", err);
-							self.io.write_error(err_str)!;
-						}
+						key = params[:n];
+						value = params[n+1..];
 					}
-					else
+					else if (params.contains(" "))
 					{
-						self.io.write_error("invalid option: no '=' found")!;
+						String[] opts = params.tsplit(" ", 2);
+						key = opts[0];
+						value = opts[1];
+					}
+					if (catch err = state.set_option(key.trim(), value.trim()))
+					{
+						String err_str = string::tformat("failed to set option: %s", err);
+						self.io.write_error(err_str)!;
 					}
 				case "HELP":  
 					self.helpCmd(state, params)!;
