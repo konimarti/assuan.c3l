@@ -1,21 +1,20 @@
 module assuan;
 
-import std::io;
-import std::collections::list;
-import std::sort;
 import assuan::proto;
+import std::io, std::collections::list, std::sort;
 
 struct AssuanServer
 {
-	AssuanIO *io;
+	AssuanIO io;
 }
 
 <*
-@param [&inout] io "Assuan communication io" 
+@param [&inout] reader "Input stream" 
+@param [&inout] writer "Output stream" 
 *>
-fn AssuanServer* AssuanServer.init(&self, AssuanIO *io)
+fn AssuanServer* AssuanServer.init(&self, InStream reader, OutStream writer)
 {
-	*self = { .io = io };
+	*self = { .io = { .r = reader, .w = writer } };
 	return self;
 }
 
@@ -33,15 +32,15 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 		String cmd, params;
 		while SERVE_LOOP: (true)
 		{
-			String[] resp = self.io.readline(allocator::temp())!.tsplit(" ", 2);
+			String[] resp = self.io.readline(allocator::heap())!.tsplit(" ", 2);
 			switch (resp.len)
 			{
-				case 2: cmd = resp[0]; params = resp[1];
+				case 2: cmd = resp[0]; params = temp_decode(resp[1]);
 				case 1: cmd = resp[0]; params = "";
 				default: return AssuanError.IO_ERROR?;
 			}
-			if (debug) io::eprintfn("[serve (%s)] cmd=%s params=%s", resp, cmd, params);
 			cmd.convert_ascii_to_upper();
+			if (debug) io::eprintfn("[serve (%s)] cmd=%s params=%s", resp, cmd, params);
 			switch (cmd)
 			{
 				case "": continue; // just ignore empty input
@@ -69,6 +68,10 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 						String err_str = string::tformat("failed to set option: %s", err);
 						self.io.write_error(err_str)!;
 					}
+					else
+					{
+						self.io.writeline("OK")!;
+					}
 				case "HELP":  
 					self.helpCmd(state, params)!;
 				default:
@@ -86,7 +89,7 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 					}
 					else
 					{
-						if (catch err = handle(self.io, state, params))
+						if (catch err = handle(&self.io, state, params))
 						{
 							String err_str = string::tformat("error on command %s: %s", cmd, err);
 							self.io.write_error(err_str)!;

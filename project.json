@@ -14,7 +14,7 @@
 		},
 		"pinentry-c3": {
 			"type": "executable",
-			"sources": [ "src/pinentry-c3/*" ]
+			"sources": [ "src/*", "src/pinentry-c3/*" ]
 		}
 	}
 }

@@ -20,16 +20,6 @@ struct AssuanIO
 	OutStream w;
 }
 
-<*
-@param [&inout] r "InStream to read from Assuan server"
-@param [&inout] w "OutStream to write to Assuan server"
-*>
-fn AssuanIO AssuanIO.init(&self, InStream r, OutStream w)
-{
-	*self = { .r = r, .w = w };
-	return *self;
-}
-
 fn String! AssuanIO.readline(&self, Allocator allocator) => io::readline(self.r, allocator)!;
 
 fn usz! AssuanIO.writeline(&self, String cmd, String params = "")
@@ -42,14 +32,14 @@ fn usz! AssuanIO.writeline(&self, String cmd, String params = "")
 
 		if (params.len)
 		{
-			line.appendf(" %s", temp_decode(params));
+			line.appendf(" %s", temp_encode(params));
 		}
 
 		line.append("\n");
 
 		if (line.len() > MAX_LINE_LENGTH) return AssuanError.LINE_TOO_LONG?;
 
-		// io::printfn("assuan::writeline: '%s'", line.str_view());
+		defer (void)self.w.flush();
 		return self.w.write(line.str_view());
 	};
 
@@ -111,6 +101,7 @@ fn String temp_encode(String s)
 {
 	DString tmp = dstring::temp_new(s);
 	tmp.replace("%", "%25"); // should be first
+	tmp.replace("\"", "%22");
 	tmp.replace("\r", "%0D");
 	tmp.replace("\n", "%0A");
 	tmp.replace("\\", "%5C");
@@ -124,6 +115,7 @@ fn String temp_decode(String s)
 	tmp.replace("%0D", "\r");
 	tmp.replace("%0A", "\n");
 	tmp.replace("%5C", "\\");
+	tmp.replace("%22", "\"");
 	tmp.replace("%25", "%"); // should be last
 	return tmp.str_view();
 }
