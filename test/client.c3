@@ -14,8 +14,10 @@ fn void test_client_run() @test
 	io::fprint(&buf, "OK\n")!!;
 
 	char[32] write;
-	AssuanIO io;
-	io.init(&buf, ByteWriter{}.init_with_buffer(write[..]));
+	AssuanIO io = { 
+		.r = &buf,
+		.w = ByteWriter{}.init_with_buffer(write[..]),
+	};
 
 	AssuanClient c;
 	c.init(io)!!;
