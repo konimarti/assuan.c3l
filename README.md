@@ -27,10 +27,12 @@ Set the pinentry-program to `pinentry-c3` in your `gpg-agent.conf` by
 adding the following line:
 
 ```
-pinentry-program pinentry-vaxis
+pinentry-program pinentry-c3
 ```
 
-The config file `gpg-agent.conf` is usually located in `~/.gnupg/`. If not, create it.
+The config file `gpg-agent.conf` is usually located in `~/.gnupg/`. If not,
+create it.  Also make sure that the `pinentry-c3` is in your $PATH variable (or
+use the full path in the config file).
 
 Then, restart the gpg-agent.
 
