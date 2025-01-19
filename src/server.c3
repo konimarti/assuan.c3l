@@ -32,7 +32,7 @@ fn void! AssuanServer.serve(&self, AssuanProtocol state = proto::default_proto()
 		String cmd, params;
 		while SERVE_LOOP: (true)
 		{
-			String[] resp = self.io.readline(allocator::heap())!.tsplit(" ", 2);
+			String[] resp = self.io.readline(allocator::temp())!.tsplit(" ", 2);
 			switch (resp.len)
 			{
 				case 2: cmd = resp[0]; params = temp_decode(resp[1]);
