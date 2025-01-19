@@ -5,11 +5,8 @@ import assuan;
 
 fn void main()
 {
-	AssuanIO io;
-	io.init(io::stdin(),io::stdout());
-
 	AssuanServer server;
-	server.init(&io);
+	server.init(io::stdin(),io::stdout());
 
 	if (catch err = server.serve(debug: true))
 	{
