@@ -30,10 +30,6 @@ fn void main()
 	AssuanServer server;
 	server.init(io::stdin(), io::stdout());
 
-	Options opt;
-	opt.new_init();
-	defer opt.free();
-
 	Pinentry pin = {
 		.help_messages = {},
 		.callbacks = {
@@ -107,8 +103,9 @@ fn void main()
 				}
 			},
 		},
-		.options = opt,
+		.options = *Options{}.new_init(),
 	};
+	defer pin.options.free();
 
 	if (catch err = server.serve(state: &pin, debug: false))
 	{
